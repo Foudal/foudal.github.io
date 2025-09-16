@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SdPrompter</title>
+    <link rel="stylesheet" href="style.css">
+    <meta name="theme-color" content="#1c1c1e"/>
+    <link rel="apple-touch-icon" href="apple-touch-icon.png">
+    <link rel="manifest" href="manifest.json">
+</head>
+<body>
+    <div id="app-container">
+        <header>
+            <h1>SdPrompter</h1>
+        </header>
+        <main id="script-list"></main>
+        <button id="add-button" class="fab">+</button>
+    </div>
+
+    <div id="editor-modal" class="modal hidden">
+        <div class="modal-content">
+            <input type="text" id="script-title-input" placeholder="Titre du script">
+            <textarea id="script-content-input" placeholder="Écrivez votre script ici..."></textarea>
+            <div class="modal-actions">
+                <button id="delete-button">Supprimer</button>
+                <div>
+                    <button id="save-button">Sauvegarder</button>
+                    <button id="launch-prompter-button">Lancer ▶</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="prompter-view" class="hidden">
+        <div id="prompter-text-container">
+            <div id="prompter-text"></div>
+        </div>
+        <div id="prompter-countdown"></div>
+        <div id="prompter-controls">
+            <button id="prompter-play-pause-btn">▶</button>
+            <button id="prompter-settings-btn">⚙️</button>
+            <button id="prompter-exit-btn">❌</button>
+        </div>
+        <div id="prompter-settings-panel" class="hidden">
+            <label for="speed-slider">Vitesse</label>
+            <input type="range" id="speed-slider" min="1" max="20" value="5">
+            <label>Mode Miroir <input type="checkbox" id="mirror-toggle"></label>
+            <label for="countdown-select">Départ (sec)</label>
+            <select id="countdown-select">
+                <option value="0">0</option>
+                <option value="3">3</option>
+                <option value="6">6</option>
+                <option value="8">8</option>
+            </select>
+            <button id="settings-ok-btn">OK</button>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>

@@ -1,0 +1,167 @@
+document.addEventListener('DOMContentLoaded', () => {
+    const appContainer = document.getElementById('app-container');
+    const scriptList = document.getElementById('script-list');
+    const addButton = document.getElementById('add-button');
+    const modal = document.getElementById('editor-modal');
+    const titleInput = document.getElementById('script-title-input');
+    const contentInput = document.getElementById('script-content-input');
+    const saveButton = document.getElementById('save-button');
+    const deleteButton = document.getElementById('delete-button');
+    const launchPrompterButton = document.getElementById('launch-prompter-button');
+    const prompterView = document.getElementById('prompter-view');
+    const prompterText = document.getElementById('prompter-text');
+    const prompterCountdown = document.getElementById('prompter-countdown');
+    const playPauseBtn = document.getElementById('prompter-play-pause-btn');
+    const settingsBtn = document.getElementById('prompter-settings-btn');
+    const exitBtn = document.getElementById('prompter-exit-btn');
+    const settingsPanel = document.getElementById('prompter-settings-panel');
+    const speedSlider = document.getElementById('speed-slider');
+    const mirrorToggle = document.getElementById('mirror-toggle');
+    const countdownSelect = document.getElementById('countdown-select');
+    const settingsOkBtn = document.getElementById('settings-ok-btn');
+
+    let scripts = [];
+    let currentEditingId = null;
+    let scrollInterval = null;
+    let currentScrollY = 0;
+    let isScrolling = false;
+    let speed = 5;
+
+    function saveScripts() { localStorage.setItem('sdprompter_scripts', JSON.stringify(scripts)); }
+    function loadScripts() {
+        const saved = localStorage.getItem('sdprompter_scripts');
+        if (saved) scripts = JSON.parse(saved);
+    }
+
+    function renderScripts() {
+        scriptList.innerHTML = '';
+        if (scripts.length === 0) {
+            scriptList.innerHTML = '<p style="text-align: center; color: #888;">Aucun script. Appuyez sur + pour commencer.</p>';
+        } else {
+            scripts.forEach(script => {
+                const item = document.createElement('div');
+                item.className = 'script-item';
+                item.innerHTML = `<h2>${script.title}</h2>`;
+                item.dataset.id = script.id;
+                item.addEventListener('click', () => openEditor(script.id));
+                scriptList.appendChild(item);
+            });
+        }
+    }
+
+    function openEditor(id = null) {
+        currentEditingId = id;
+        if (id) {
+            const script = scripts.find(s => s.id === id);
+            titleInput.value = script.title;
+            contentInput.value = script.content;
+            deleteButton.style.display = 'block';
+            launchPrompterButton.style.display = 'inline-block';
+        } else {
+            titleInput.value = '';
+            contentInput.value = '';
+            currentEditingId = Date.now();
+            deleteButton.style.display = 'none';
+            launchPrompterButton.style.display = 'none';
+        }
+        modal.classList.remove('hidden');
+    }
+
+    function closeEditor() { modal.classList.add('hidden'); }
+
+    function launchPrompter() {
+        const script = scripts.find(s => s.id === currentEditingId);
+        if (!script) return;
+        prompterText.innerText = script.content;
+        closeEditor();
+        appContainer.classList.add('hidden');
+        prompterView.classList.remove('hidden');
+        resetPrompterState();
+    }
+
+    function resetPrompterState() {
+        if (scrollInterval) clearInterval(scrollInterval);
+        isScrolling = false;
+        currentScrollY = 0;
+        prompterText.style.transform = `translateY(0px)`;
+        playPauseBtn.innerText = '▶';
+        settingsBtn.style.display = 'inline-block';
+    }
+
+    function startCountdown() {
+        let count = parseInt(countdownSelect.value);
+        if (count === 0) { startScrolling(); return; }
+        prompterCountdown.innerText = count;
+        prompterCountdown.classList.remove('hidden');
+        const countdownInterval = setInterval(() => {
+            count--;
+            if (count > 0) {
+                prompterCountdown.innerText = count;
+            } else {
+                clearInterval(countdownInterval);
+                prompterCountdown.classList.add('hidden');
+                startScrolling();
+            }
+        }, 1000);
+    }
+
+    function startScrolling() {
+        isScrolling = true;
+        playPauseBtn.innerText = '❚❚';
+        settingsBtn.style.display = 'none';
+        const prompterContainer = document.getElementById('prompter-text-container');
+        scrollInterval = setInterval(() => {
+            currentScrollY += speed / 5;
+            prompterText.style.transform = `translateY(-${currentScrollY}px)`;
+            if (currentScrollY >= prompterText.offsetHeight - prompterContainer.offsetHeight / 2) {
+                stopScrolling();
+            }
+        }, 20);
+    }
+
+    function stopScrolling() {
+        isScrolling = false;
+        clearInterval(scrollInterval);
+        playPauseBtn.innerText = '▶';
+        settingsBtn.style.display = 'inline-block';
+    }
+
+    function exitPrompter() {
+        stopScrolling();
+        prompterView.classList.add('hidden');
+        appContainer.classList.remove('hidden');
+    }
+
+    addButton.addEventListener('click', () => openEditor());
+    saveButton.addEventListener('click', () => {
+        const existingScript = scripts.find(s => s.id === currentEditingId);
+        if (existingScript) {
+            existingScript.title = titleInput.value || "Script sans titre";
+            existingScript.content = contentInput.value;
+        } else {
+            scripts.push({ id: currentEditingId, title: titleInput.value || "Script sans titre", content: contentInput.value });
+        }
+        saveScripts();
+        renderScripts();
+        closeEditor();
+    });
+    deleteButton.addEventListener('click', () => {
+        if (confirm("Êtes-vous sûr de vouloir supprimer ce script ?")) {
+            scripts = scripts.filter(s => s.id !== currentEditingId);
+            saveScripts();
+            renderScripts();
+            closeEditor();
+        }
+    });
+    modal.addEventListener('click', (e) => { if (e.target === modal) closeEditor(); });
+    launchPrompterButton.addEventListener('click', launchPrompter);
+    playPauseBtn.addEventListener('click', () => { isScrolling ? stopScrolling() : startCountdown(); });
+    exitBtn.addEventListener('click', exitPrompter);
+    settingsBtn.addEventListener('click', () => settingsPanel.classList.toggle('hidden'));
+    settingsOkBtn.addEventListener('click', () => settingsPanel.classList.add('hidden'));
+    speedSlider.addEventListener('input', (e) => speed = parseInt(e.target.value));
+    mirrorToggle.addEventListener('change', (e) => prompterText.classList.toggle('mirrored', e.target.checked));
+
+    loadScripts();
+    renderScripts();
+});
